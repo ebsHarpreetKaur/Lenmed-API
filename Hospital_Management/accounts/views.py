@@ -14,6 +14,7 @@ from django.contrib.auth.hashers import make_password
 from hospital.models import Hospital
 from hospital.views import HandleHospitalData
 from hashlib import sha1 as hash_sha1
+from sys import exc_info
 
 
 def GetCurrentUserData(id, current_role):
@@ -279,9 +280,11 @@ class HandleHospitalAndAdmin(APIView):
                 return Response(formatResponse('User created successfully', 'success',  user_id,
                                                status.HTTP_200_OK))
             else:
+                print("---4--->", exc_info())
                 return Response(formatResponse('Something went wrong', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
+            print("---5--->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -316,9 +319,16 @@ class HandleHospitalAndAdmin(APIView):
 
             is_data_valid = self.DataValidation(email, hospital_name)
 
+            role_name = dataset['role']
+            try:
+                role_id = Role.objects.get(role=role_name)
+                role_id = role_id.id
+            except:
+                role_id = 3
+
             if is_data_valid == 'Success':
                 pswrd = make_password('admin123')
-                data = {'name': dataset['admin_name'], 'role_id': 6,
+                data = {'name': dataset['admin_name'], 'role_id': role_id,
                         'email': email, 'hospital_name': hospital_name, 'password': pswrd, 'is_admin': dataset['is_admin']}
 
                 save_admin = self.addAdmin(data)
@@ -344,14 +354,16 @@ class HandleHospitalAndAdmin(APIView):
                         return Response(formatResponse('Unable to create , please try again in some time.', 'error', None,
                                                        status.HTTP_400_BAD_REQUEST))
                 else:
+                    print("---1--->", exc_info())
                     return Response(formatResponse('Something went wrong', 'error', None,
                                                    status.HTTP_400_BAD_REQUEST))
 
             else:
+                print("---2--->", exc_info())
                 return Response(formatResponse(is_data_valid, 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
         except:
-
+            print("---3--->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
