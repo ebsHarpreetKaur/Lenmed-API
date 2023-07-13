@@ -364,6 +364,7 @@ class HandleHospitalAndAdmin(APIView):
                                                status.HTTP_400_BAD_REQUEST))
 
         except:
+
             print("---3--->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
