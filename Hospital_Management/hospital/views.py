@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from .serializer import HospitalSerializer
+from sys import exc_info
 # Create your views here.
 
 
@@ -17,4 +18,5 @@ def HandleHospitalData(dataSet):
             return None
 
     except:
+        print("-->", exc_info())
         return None
