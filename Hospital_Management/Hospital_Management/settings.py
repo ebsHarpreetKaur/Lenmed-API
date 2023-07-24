@@ -172,3 +172,34 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = default_headers + (
     'Access-Control-Allow-Headers', 'access-control-allow-origin',
 )
+
+# SMTP_USER = 'Joban'
+# SMTP_PASSWORD = 'Singh@123'
+# EMAIL_USE_TLS = True
+# SMTP_HOST = 'smtp.gmail.com'
+# SMTP_PORT = 587
+# SMTP_FROM_EMAIL = 'gcrew.joban@gmail.com'
+# SMTP_MAILER_NAME = 'joban'
+# SMTP_MAILER_NAME = 'Lovepreet'
+# SMTP_FROM_EMAIL = 'gcrew.lovepreet@gmail.com'
+# SMTP_HOST = 'smtp.gmail.com'
+# SMTP_PORT = 587
+# SMTP_PASSWORD = 'tncesyqyxjpcaxht'
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST_USER = 'gcrew.lovepreet@gmail.com'
+# EMAIL_HOST_PASSWORD = 'tncesyqyxjpcaxht'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'ebsmanjitsingh@gmail.com'
+EMAIL_HOST_PASSWORD = 'cruutjufjyegyleq'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+OTP_EXPIRE_TIME = 1  # hour
