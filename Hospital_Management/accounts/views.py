@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from hashlib import sha1 as hash_sha1
 from hospital.models import Hospital
-from hospital.views import HandleHospitalData
+from hospital.views import AddHospital
 from .models import HospitalUser, Role, PasswordRecovery
 from os.path import dirname as os_dirname, abspath as os_abspath
 from random import choice as random_choice
@@ -345,7 +345,7 @@ class HandleHospitalAndAdmin(APIView):
                 if admin_id:
                     hospital_dict = {'admin_id': admin_id, 'admin_email': email,
                                      'name': hospital_name, 'address': dataset['address']}
-                    add_hospital = HandleHospitalData(hospital_dict)
+                    add_hospital = AddHospital(hospital_dict)
 
                     if add_hospital:
                         return Response(formatResponse('Admin and Hospital created successfully.', 'success', {"Admin": admin_id, "hospital": add_hospital},

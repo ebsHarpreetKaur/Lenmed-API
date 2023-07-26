@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     'baseapp',
-    'hospital'
+    'hospital',
+    'doctor'
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
