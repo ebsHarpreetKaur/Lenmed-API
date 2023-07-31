@@ -13,6 +13,7 @@ class Permission(BaseModel):
     # )
     # name = models.CharField(max_length=100, choices=PERMISSION_CHOICES, null=False, unique=True)
     name = models.CharField(max_length=100, null=False, unique=True)
+    permission_key = models.CharField(max_length=50, null=True, unique=True, default=None)
 
     class Meta:
         verbose_name_plural = 'Permission'

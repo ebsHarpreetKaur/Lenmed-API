@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'accounts',
     'baseapp',
     'hospital',
-    'doctor'
+    'doctors',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -113,7 +113,7 @@ DATABASES = {
         'SCHEMA': 'MAIN',
         'WAREHOUSE': 'APP_VWH',
         'USER': 'harpreet',
-        'PASSWORD': 'HarpreetLenmed1',
+        'PASSWORD': 'Harpreet123',
         'ACCOUNT': 'HEA23966-FM98333',
     },
 }

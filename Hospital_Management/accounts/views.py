@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from hashlib import sha1 as hash_sha1
 from hospital.models import Hospital
 from hospital.views import AddHospital
-from .models import HospitalUser, Role, PasswordRecovery
+from .models import HospitalUser, Role, PasswordRecovery, Permission
 from os.path import dirname as os_dirname, abspath as os_abspath
 from random import choice as random_choice
 from rest_framework import status
@@ -262,6 +262,76 @@ class HandleRole(APIView):
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
+    def get(self, request):
+        try:
+            data = None
+
+            role_obj = Role.objects.filter()
+
+            if role_obj:
+                srlz_obj = RoleSerializer(role_obj, many=True)
+                data = srlz_obj.data
+                return Response(formatResponse('Roles found successfully', 'success', data,
+                                               status.HTTP_200_OK))
+
+        except:
+            print("--error--finding--Roles--", exc_info())
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def put(self, request):
+        try:
+            data_set = dict(request.data)
+            role_name = data_set['role']
+
+            if not role_name:
+                return Response(formatResponse('Please Provide Role Name Wich you want to Update .', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            data_set = dict(request.data)
+            role_obj = Role.objects.filter(role=role_name)
+
+            if not role_obj:
+                return Response(formatResponse('Provided Role Name id not Valid.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            srlz_obj = RoleSerializer()
+            srlz_data = srlz_obj.update(role_obj[0], data_set)
+            updated_data = RoleSerializer(srlz_data).data
+
+            return Response(formatResponse('Role Updated successfully', 'success',  updated_data,
+                                           status.HTTP_200_OK))
+
+        except:
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def delete(self, request):
+        try:
+            data = dict(request.data)
+            name = data['role']
+
+            if not name:
+                return Response(formatResponse('Please Provide Role Name ', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            try:
+                role_obj = Role.objects.get(name=name)
+            except:
+                role_obj = None
+
+            if role_obj:
+                role_obj.delete()
+                return Response(formatResponse('Role deleted successfully', 'success', None,
+                                               status.HTTP_200_OK))
+            else:
+                return Response(formatResponse('No Role Found to Delete. ', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+        except:
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
 
 class HandleHospitalAndAdmin(APIView):
     permission_classes = (IsAuthenticated,)
@@ -505,3 +575,74 @@ def password_reset(request):
     except:
         return Response(formatResponse('Internal Server Error', 'error', None,
                                        status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+
+class handlePermissions(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            data_dict = dict(request.data)
+            per_key = data_dict['permission_key']
+
+            check_key_exist = Permission.objects.filter(permission_key=per_key)
+
+            if check_key_exist:
+                return Response(formatResponse('The permission key already exists. Please choose a different key or utilize the existing permission.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            else:
+                srlz_obj = PermissionSerializer()
+                add_permission = srlz_obj.create(data_dict)
+                permission_key = add_permission.permission_key
+                if permission_key:
+                    return Response(formatResponse('Permission created successfully', 'success', {"key": permission_key},
+                                                   status.HTTP_200_OK))
+
+        except:
+            print("--error--adding--permissions--", exc_info())
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def get(self, request):
+        try:
+            data = None
+
+            per_obj = Permission.objects.filter()
+
+            if per_obj:
+                srlz_obj = PermissionSerializer(per_obj, many=True)
+                data = srlz_obj.data
+                return Response(formatResponse('Permissions found successfully', 'success', data,
+                                               status.HTTP_200_OK))
+
+        except:
+            print("--error--finding--permissions--", exc_info())
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def delete(self, request):
+        try:
+            data = dict(request.data)
+            per_to_delete = data['permission_key']
+
+            if not per_to_delete:
+                return Response(formatResponse('Please Provide Permission ', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            try:
+                per_obj = Permission.objects.get(permission_key=per_to_delete)
+            except:
+                per_obj = None
+
+            if per_obj:
+                per_obj.delete()
+                return Response(formatResponse('Permissions deleted successfully', 'success', None,
+                                               status.HTTP_200_OK))
+            else:
+                return Response(formatResponse('No Permission Found to Delete. ', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+        except:
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))

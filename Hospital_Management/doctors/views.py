@@ -6,9 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from baseapp.utils import formatResponse
 from sys import exc_info
-from .models import Doctor
+from .models import DoctorDetail
 from accounts.models import HospitalUser, Role
 from hospital.models import Hospital
+from accounts.serializer import HospitalUserSerializer
 
 
 class HandleDoctorData(APIView):
@@ -26,7 +27,7 @@ class HandleDoctorData(APIView):
         :return:
         '''
         _message = None
-        email_obj = Doctor.objects.filter(email=email)
+        email_obj = HospitalUser.objects.filter(email=email)
 
         if email_obj:
             _message = "Please choose a different email as the provided email already exists"
@@ -38,7 +39,7 @@ class HandleDoctorData(APIView):
 
     def getDoctorObject(self, id):
         try:
-            doct_obj = Doctor.objects.filter(id=id)
+            doct_obj = DoctorDetail.objects.filter(id=id)
             if doct_obj:
                 return doct_obj
             else:
@@ -46,36 +47,73 @@ class HandleDoctorData(APIView):
         except:
             return None
 
+    def registerDoctor(self, data):
+        try:
+            data_dict = data
+            data_dict['role_id'] = 9
+            data_dict['is_admin'] = False
+
+            print("--data_dict->", data_dict)
+            doc_srlz_obj = HospitalUserSerializer()
+            add_doctor = doc_srlz_obj.create(data_dict)
+
+            if add_doctor:
+                doc_id = add_doctor.id
+
+                return doc_id
+
+            else:
+                return None
+
+        except:
+            print("--->", exc_info())
+            return None
+
     def post(self, request):
         try:
             data = dict(request.data)
             user_id = request.user.id
             user_role = request.user.role.role
+            data_dict = {"emial": data['email'], "name": data['admin_name'],
+                         "hospital_name": data['hospital'], "address": data['address']}
+
             is_data_valid = self.DataValidation(data['email'])
 
             if is_data_valid != "Success":
                 return Response(formatResponse(is_data_valid, 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
-            if user_role == 'Admin':
-                hsptl_obj = Hospital.objects.filter(admin_id=user_id).values("id")
+            if user_role == 'Admin' or user_role == 'Superadmin':
+                register_doctor = self.registerDoctor(data_dict)
 
-                try:
-                    role_id = Role.objects.get(role=data['role_id'])
-                    role_id = role_id.id
-                except:
-                    role_id = 3
+                if register_doctor:
+                    doc_detail = {"doctor_id": register_doctor, "phone_number": data['phone_number'], "gender": data[
+                        'gender'], "specialization": data['specialization']}
 
-                data['admin_id'] = user_id
-                data['hospital_id'] = hsptl_obj[0]["id"]
-                data['role_id'] = role_id
+                    doc_srlz_obj = DoctorSerializer()
+                    add_doctor = doc_srlz_obj.create(doc_detail)
+                    doctor_id = add_doctor.id
+                    return Response(formatResponse('Doctor Saved successfully', 'success', {"doctor_id": doctor_id},
+                                                   status.HTTP_200_OK))
 
-                srlz_obj = DoctorSerializer()
-                save_doctor = srlz_obj.create(data)
-                doctor_id = save_doctor.id
+                # hsptl_obj = Hospital.objects.filter(admin_id=user_id).values("id")
 
-                return Response(formatResponse('Doctor Saved successfully', 'success', {"doctor_id": doctor_id},
-                                               status.HTTP_200_OK))
+                # try:
+                #     role_id = Role.objects.get(role=data['role_id'])
+                #     role_id = role_id.id
+                # except:
+                #     role_id = 3
+
+                # data['admin_id'] = user_id
+                # data['hospital_id'] = hsptl_obj[0]["id"]
+                # data['role_id'] = role_id
+
+                # srlz_obj = DoctorSerializer()
+                # save_doctor = srlz_obj.create(data)
+                # doctor_id = save_doctor.id
+                else:
+                    return Response(formatResponse('Something went wrong , please try gain',  'error', None,
+                                                   status.HTTP_400_BAD_REQUEST))
             else:
                 return Response(formatResponse("Apologies, but you do not have the necessary permissions to Add Doctor.", 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
@@ -91,7 +129,7 @@ class HandleDoctorData(APIView):
             doctor_id = request.GET.get("id", None)
 
             if user_role == 'Admin' and doctor_id == None:
-                doct_obj = Doctor.objects.filter(admin_id=user_id)
+                doct_obj = DoctorDetail.objects.filter(admin_id=user_id)
             else:
                 doct_obj = self.getDoctorObject(doctor_id)
 
