@@ -86,8 +86,14 @@ class HandleHospitalData(APIView):
         try:
             user_id = request.user.id
             data_dict = request.data
-            hsptl_obj = self.getHospitalObject(user_id)
 
+            if_alredy_exist = Hospital.objects.filter(id != user_id, name=data_dict)
+
+            if if_alredy_exist:
+                return Response(formatResponse('Same Hospital is registered to another user, Please Change the Hospital Name', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            hsptl_obj = self.getHospitalObject(user_id)
             if hsptl_obj:
                 srlz_obj = HospitalSerializer()
                 srlz_data = srlz_obj.update(hsptl_obj[0], data_dict)

@@ -11,5 +11,5 @@ urlpatterns = [
     path('add-hospital-admin/', HandleHospitalAndAdmin.as_view()),
     path('forgot-password/', password_reset_request),
     path('reset-password/', password_reset),
-    path('handle-permissions/', handlePermissions.as_view())
+    path('handle-permissions/', handlePermissions.as_view()),
 ]

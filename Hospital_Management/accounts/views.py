@@ -349,16 +349,24 @@ class HandleHospitalAndAdmin(APIView):
         '''
         try:
             dataset = data
-            obj = HospitalUserSerializer()
-            dataset['password'] = make_password(dataset['password'])
-            save_data = obj.create(dataset)
-            user_id = save_data.id
+            if_already_exist = HospitalUser.objects.filter(email=dataset['email']).values("id")
 
-            if user_id:
-                return Response(formatResponse('User created successfully', 'success',  user_id,
+            if if_already_exist:
+                user_id = if_already_exist[0]['id']
+                return Response(formatResponse('User Already Created', 'success',  user_id,
                                                status.HTTP_200_OK))
             else:
-                print("---4--->", exc_info())
+                obj = HospitalUserSerializer()
+                dataset['password'] = make_password(dataset['password'])
+                save_data = obj.create(dataset)
+                user_id = save_data.id
+                user_name = save_data.name
+                print("-->", user_name)
+                if user_id:
+                    return Response(formatResponse('User created successfully', 'success',  user_id,
+                                                   status.HTTP_200_OK))
+                else:
+                    print("---4--->", exc_info())
                 return Response(formatResponse('Something went wrong', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
@@ -366,20 +374,20 @@ class HandleHospitalAndAdmin(APIView):
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
-    def DataValidation(self, email, hospital):
+    def DataValidation(self, hospital):
         '''
         Method to check if email and hospital is unique or not :
         :param email , hospital:
         :return:
         '''
         _message = None
-        email_obj = HospitalUser.objects.filter(email=email)
+        # email_obj = HospitalUser.objects.filter(email=email)
         hospital_obj = Hospital.objects.filter(name=hospital)
 
-        if email_obj:
-            _message = "Please choose a different email as the provided email already exists"
+        # if email_obj:
+        #     _message = "Please choose a different email as the provided email already exists"
 
-        elif hospital_obj:
+        if hospital_obj:
             _message = "Please choose a different Hospital as the provided email already exists"
 
         else:
@@ -395,7 +403,7 @@ class HandleHospitalAndAdmin(APIView):
             email = dataset['email']
             hospital_name = dataset['hospital']
 
-            is_data_valid = self.DataValidation(email, hospital_name)
+            is_data_valid = self.DataValidation(hospital_name)
 
             role_name = dataset['role_id']
             try:
@@ -407,8 +415,9 @@ class HandleHospitalAndAdmin(APIView):
             if is_data_valid == 'Success':
                 pswrd = 'password'
                 data = {'name': dataset['admin_name'], 'role_id': role_id,
-                        'email': email, 'hospital_name': hospital_name, 'password': pswrd, 'is_admin': dataset['is_admin']}
+                        'email': email, 'password': pswrd, 'is_admin': dataset['is_admin']}
 
+                print("-->", data)
                 save_admin = self.addAdmin(data)
                 admin_id = save_admin.data['data']
 
@@ -444,6 +453,21 @@ class HandleHospitalAndAdmin(APIView):
         except:
 
             print("---3--->", exc_info())
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def get(self, request):
+        try:
+            usr_obj = HospitalUser.objects.filter()
+
+            srlz_obj = GetCurrentUserSerializer(usr_obj, many=True)
+            data = srlz_obj.data
+
+            return Response(formatResponse('Users found successfully', 'success', data,
+                                           status.HTTP_200_OK))
+
+        except:
+            print("--->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -507,7 +531,7 @@ def password_reset_request(request):
             obj_pr.otp = otp
             obj_pr.save()
 
-            return Response(formatResponse('Email sentsuccessfully', 'success', otp,
+            return Response(formatResponse('Email sent successfully', 'success', otp,
                                            status.HTTP_200_OK))
 
         return Response(formatResponse('Email does', 'error', None,

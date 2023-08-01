@@ -10,6 +10,7 @@ from .models import DoctorDetail
 from accounts.models import HospitalUser, Role
 from hospital.models import Hospital
 from accounts.serializer import HospitalUserSerializer
+from django.contrib.auth.hashers import make_password
 
 
 class HandleDoctorData(APIView):
@@ -49,13 +50,15 @@ class HandleDoctorData(APIView):
 
     def registerDoctor(self, data):
         try:
-            data_dict = data
-            data_dict['role_id'] = 9
+            data_dict = dict(data)
+            data_dict['role_id'] = 7
             data_dict['is_admin'] = False
+            data_dict['password'] = make_password('Mydoctor')
+            print("-->", data_dict)
 
-            print("--data_dict->", data_dict)
             doc_srlz_obj = HospitalUserSerializer()
             add_doctor = doc_srlz_obj.create(data_dict)
+            # add_doctor = doc_srlz_obj.create(data_dict)
 
             if add_doctor:
                 doc_id = add_doctor.id
@@ -74,9 +77,7 @@ class HandleDoctorData(APIView):
             data = dict(request.data)
             user_id = request.user.id
             user_role = request.user.role.role
-            data_dict = {"emial": data['email'], "name": data['admin_name'],
-                         "hospital_name": data['hospital'], "address": data['address']}
-
+            data_dict = {"email": data['email'], "name": data['name']}
             is_data_valid = self.DataValidation(data['email'])
 
             if is_data_valid != "Success":
@@ -89,7 +90,7 @@ class HandleDoctorData(APIView):
                 if register_doctor:
                     doc_detail = {"doctor_id": register_doctor, "phone_number": data['phone_number'], "gender": data[
                         'gender'], "specialization": data['specialization']}
-
+                    print("-->", doc_detail)
                     doc_srlz_obj = DoctorSerializer()
                     add_doctor = doc_srlz_obj.create(doc_detail)
                     doctor_id = add_doctor.id

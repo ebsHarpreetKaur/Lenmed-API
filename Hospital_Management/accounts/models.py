@@ -50,7 +50,6 @@ class HospitalUser(BaseModel, AbstractBaseUser):
     name = models.CharField(max_length=255, null=False)
     is_admin = models.BooleanField(default=False, db_index=True)
     is_superuser = models.BooleanField(default=False, db_index=True)
-    hospital_name = models.CharField(max_length=255, null=True, blank=True, default=None)
     is_active = models.BooleanField(default=True, null=True)
     is_staff = models.BooleanField(default=True, null=True)
 
