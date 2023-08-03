@@ -6,14 +6,15 @@ class GetCurrentUserSerializer(serializers.ModelSerializer):
     """ User fields to return in response"""
     class Meta:
         model = HospitalUser
-        fields = ('id', 'email', 'name', 'role_detail')
+        fields = ('id', 'email', 'name', 'role_detail', 'profile_image', 'age', 'blood_group')
 
 
 class HospitalUserSerializer(serializers.ModelSerializer):
     """ Serializer to add/update user """
     class Meta:
         model = HospitalUser
-        fields = ('email', 'name', 'role', 'password', 'is_admin')
+        fields = ('email', 'name', 'role', 'password', 'is_admin',
+                  'profile_image', 'age', 'blood_group')
 
 
 class RoleSerializer(serializers.ModelSerializer):

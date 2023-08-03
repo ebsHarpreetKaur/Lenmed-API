@@ -88,6 +88,133 @@ def login(request):
                                        status.HTTP_500_INTERNAL_SERVER_ERROR))
 
 
+def generate_otp(size):
+    """method to generate OTP"""
+    # Takes random choices from
+    # ascii_letters and digits
+    generate_pass = ''.join([random_choice(ascii_uppercase + string_digits)
+                             for n in range(size)])
+
+    return generate_pass
+
+
+@api_view(["POST"])
+@permission_classes((AllowAny,))
+def password_reset_request(request):
+    """
+    method to handle password reset
+    :param request: email and name
+    """
+    try:
+        email_to = request.data.get("email", None)
+        name_to = request.data.get("name", None)
+
+        if not email_to:
+            msg = 'Email id is required'
+            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
+
+        user_obj = HospitalUser.objects.filter(email=email_to)
+        is_exist = user_obj.count()
+
+        if is_exist > 0:
+            otp = generate_otp(6)
+            root_path = os_dirname(os_dirname(os_abspath(__file__)))
+            root_path = str(root_path) + '/accounts/templates/passwordRecovery.html'
+            email_content = ''
+
+            with open(root_path, 'r') as myfile:
+                email_content = myfile.read()
+
+            email_content = str(email_content).replace("[name]", name_to)
+            email_content = str(email_content).replace("[email]", email_to)
+            email_content = str(email_content).replace("[otp]", str(otp))
+            subject = "Password Reset"
+
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body="",
+                from_email=EMAIL_HOST_USER,
+                to=[email_to]
+            )
+            email.attach_alternative(email_content, 'text/html')
+            email.send()
+
+            obj_pr = PasswordRecovery()
+            obj_pr.email = email_to
+            obj_pr.user_id = user_obj[0].id
+            obj_pr.otp = otp
+            obj_pr.save()
+
+            return Response(formatResponse('Email sent successfully', 'success', otp,
+                                           status.HTTP_200_OK))
+
+        return Response(formatResponse('Email does', 'error', None,
+                                       status.HTTP_400_BAD_REQUEST))
+
+    except:
+        from sys import exc_info
+        print("--->>>", exc_info())
+        return Response(formatResponse('Internal Server Error', 'error', None,
+                                       status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+
+@api_view(["POST"])
+@permission_classes((AllowAny,))
+def password_reset(request):
+    """
+    method to handle password reset
+    :param request: otp ,email and password
+    """
+    try:
+        otp = request.data.get("otp", None)
+        password = request.data.get("password", None)
+        email = request.data.get("email", None)
+
+        if not otp:
+            msg = 'Temporary One time password is required'
+            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
+
+        if not password:
+            msg = 'Password is required'
+            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
+
+        if not email:
+            msg = 'Email is required'
+            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
+
+        otp_obj = PasswordRecovery.objects.filter(otp=otp, email=email)
+        is_exist = otp_obj.count()
+
+        if is_exist > 0:
+            otp_created = otp_obj[0].created_at
+            otp_created = str(otp_created).split('.')[0]
+            otp_created = datetime.strptime(otp_created, "%Y-%m-%d %H:%M:%S")
+
+            current_datetime = datetime.now()
+            current_datetime = str(current_datetime).split('.')[0]
+            current_datetime = datetime.strptime(current_datetime, "%Y-%m-%d %H:%M:%S")
+
+            expired_at = otp_created+timedelta(hours=OTP_EXPIRE_TIME)
+
+            if expired_at > current_datetime:
+                obj_u = HospitalUser.objects.get(id=otp_obj[0].user_id)
+                obj_u.set_password(password)
+                obj_u.save()
+                otp_obj.delete()
+
+                return Response(formatResponse('Password reset successfully', 'success',
+                                               None, status.HTTP_200_OK))
+            else:
+                return Response(formatResponse('Temporary One time password is Expired', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+        else:
+            return Response(formatResponse('Temporary One time Password or Email is not valid', 'error',
+                                           None, status.HTTP_400_BAD_REQUEST))
+    except:
+        return Response(formatResponse('Internal Server Error', 'error', None,
+                                       status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+
 class ChangePassword(APIView):
     '''
     Method to change user password
@@ -415,7 +542,7 @@ class HandleHospitalAndAdmin(APIView):
             if is_data_valid == 'Success':
                 pswrd = 'password'
                 data = {'name': dataset['admin_name'], 'role_id': role_id,
-                        'email': email, 'password': pswrd, 'is_admin': dataset['is_admin']}
+                        'email': email, 'password': pswrd, 'is_admin': dataset['is_admin'], 'profile_image': dataset['profile_image'], 'age': dataset['age'], 'blood_group': dataset['blood_group']}
 
                 print("-->", data)
                 save_admin = self.addAdmin(data)
@@ -471,134 +598,7 @@ class HandleHospitalAndAdmin(APIView):
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
-
-def generate_otp(size):
-    """method to generate OTP"""
-    # Takes random choices from
-    # ascii_letters and digits
-    generate_pass = ''.join([random_choice(ascii_uppercase + string_digits)
-                             for n in range(size)])
-
-    return generate_pass
-
-
-# class ForgotPassword(APIView):
-
-@api_view(["POST"])
-@permission_classes((AllowAny,))
-def password_reset_request(request):
-    """
-    method to handle password reset
-    :param request: email and name
-    """
-    try:
-        email_to = request.data.get("email", None)
-        name_to = request.data.get("name", None)
-
-        if not email_to:
-            msg = 'Email id is required'
-            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
-
-        user_obj = HospitalUser.objects.filter(email=email_to)
-        is_exist = user_obj.count()
-
-        if is_exist > 0:
-            otp = generate_otp(6)
-            root_path = os_dirname(os_dirname(os_abspath(__file__)))
-            root_path = str(root_path) + '/accounts/templates/passwordRecovery.html'
-            email_content = ''
-
-            with open(root_path, 'r') as myfile:
-                email_content = myfile.read()
-
-            email_content = str(email_content).replace("[name]", name_to)
-            email_content = str(email_content).replace("[email]", email_to)
-            email_content = str(email_content).replace("[otp]", str(otp))
-            subject = "Password Reset"
-
-            email = EmailMultiAlternatives(
-                subject=subject,
-                body="",
-                from_email=EMAIL_HOST_USER,
-                to=[email_to]
-            )
-            email.attach_alternative(email_content, 'text/html')
-            email.send()
-
-            obj_pr = PasswordRecovery()
-            obj_pr.email = email_to
-            obj_pr.user_id = user_obj[0].id
-            obj_pr.otp = otp
-            obj_pr.save()
-
-            return Response(formatResponse('Email sent successfully', 'success', otp,
-                                           status.HTTP_200_OK))
-
-        return Response(formatResponse('Email does', 'error', None,
-                                       status.HTTP_400_BAD_REQUEST))
-
-    except:
-        from sys import exc_info
-        print("--->>>", exc_info())
-        return Response(formatResponse('Internal Server Error', 'error', None,
-                                       status.HTTP_500_INTERNAL_SERVER_ERROR))
-
-
-@api_view(["POST"])
-@permission_classes((AllowAny,))
-def password_reset(request):
-    """
-    method to handle password reset
-    :param request: otp ,email and password
-    """
-    try:
-        otp = request.data.get("otp", None)
-        password = request.data.get("password", None)
-        email = request.data.get("email", None)
-
-        if not otp:
-            msg = 'Temporary One time password is required'
-            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
-
-        if not password:
-            msg = 'Password is required'
-            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
-
-        if not email:
-            msg = 'Email is required'
-            return Response(formatResponse(msg, 'error', None, status.HTTP_400_BAD_REQUEST))
-
-        otp_obj = PasswordRecovery.objects.filter(otp=otp, email=email)
-        is_exist = otp_obj.count()
-
-        if is_exist > 0:
-            otp_created = otp_obj[0].created_at
-            otp_created = str(otp_created).split('.')[0]
-            otp_created = datetime.strptime(otp_created, "%Y-%m-%d %H:%M:%S")
-
-            current_datetime = datetime.now()
-            current_datetime = str(current_datetime).split('.')[0]
-            current_datetime = datetime.strptime(current_datetime, "%Y-%m-%d %H:%M:%S")
-
-            expired_at = otp_created+timedelta(hours=OTP_EXPIRE_TIME)
-
-            if expired_at > current_datetime:
-                obj_u = HospitalUser.objects.get(id=otp_obj[0].user_id)
-                obj_u.set_password(password)
-                obj_u.save()
-                otp_obj.delete()
-
-                return Response(formatResponse('Password reset successfully', 'success',
-                                               None, status.HTTP_200_OK))
-            else:
-                return Response(formatResponse('Temporary One time password is Expired', 'error', None,
-                                               status.HTTP_400_BAD_REQUEST))
-        else:
-            return Response(formatResponse('Temporary One time Password or Email is not valid', 'error',
-                                           None, status.HTTP_400_BAD_REQUEST))
-    except:
-        return Response(formatResponse('Internal Server Error', 'error', None,
-                                       status.HTTP_500_INTERNAL_SERVER_ERROR))
+    # def put(self,request)
 
 
 class handlePermissions(APIView):

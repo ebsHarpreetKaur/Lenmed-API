@@ -8,6 +8,7 @@ from baseapp.utils import formatResponse
 from sys import exc_info
 from .models import Hospital
 from accounts.models import HospitalUser
+from logs.LogHandler import LogHelper
 
 # Create your views here.
 
@@ -36,6 +37,7 @@ class HandleHospitalData(APIView):
     :return:
     '''
     permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('hospital', 'HandleHospitalData')
 
     def getHospitalObject(sef, id):
         try:
@@ -62,7 +64,6 @@ class HandleHospitalData(APIView):
         try:
             user_role = request.user.role.role
             user_id = request.user.id
-
             if user_role == 'Superadmin':
                 hsptl_obj = Hospital.objects.filter()
             else:
@@ -78,6 +79,7 @@ class HandleHospitalData(APIView):
                 return Response(formatResponse('No data found', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
+            self.objLog.doLog(exc_info(), 'error')
             print("-error in fetching Hospital Data->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
@@ -107,6 +109,7 @@ class HandleHospitalData(APIView):
                                                    status.HTTP_400_BAD_REQUEST))
 
         except:
+            self.objLog.doLog(exc_info(), 'error')
             print("-error in Updating Hospital Data->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
@@ -132,6 +135,7 @@ class HandleHospitalData(APIView):
                 return Response(formatResponse("Apologies, but you do not have the necessary permissions to delete the hospital.", 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
+            self.objLog.doLog(exc_info(), 'error')
             print("-error in removing Hospital Data->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))

@@ -52,6 +52,9 @@ class HospitalUser(BaseModel, AbstractBaseUser):
     is_superuser = models.BooleanField(default=False, db_index=True)
     is_active = models.BooleanField(default=True, null=True)
     is_staff = models.BooleanField(default=True, null=True)
+    profile_image = models.TextField(blank=True, null=True)
+    age = models.IntegerField(null=True)
+    blood_group = models.CharField(max_length=15, null=True)
 
     USERNAME_FIELD = 'email'
     objects = UserManager()
