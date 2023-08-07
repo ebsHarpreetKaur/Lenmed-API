@@ -681,7 +681,7 @@ class handlePermissions(APIView):
         try:
             permission_id = request.GET.get('permission_id', None)
             data_set = dict(request.data)
-
+            print("-->", data_set)
             if not permission_id:
                 return Response(formatResponse('Please Provide Permission ID.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
