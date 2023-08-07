@@ -64,12 +64,13 @@ class HandleHospitalData(APIView):
         try:
             user_role = request.user.role.role
             user_id = request.user.id
-            hospital_id = request.GET.get['hospital_id', None]
-            if user_role == 'Superadmin':
-                hsptl_obj = Hospital.objects.filter()
+            hospital_id = request.GET.get('hospital_id', None)
 
-            elif hospital_id:
+            if hospital_id:
                 hsptl_obj = self.getHospitalObject(user_id, hospital_id)
+
+            elif user_role == 'Superadmin':
+                hsptl_obj = Hospital.objects.filter()
 
             else:
                 hsptl_obj = Hospital.objects.filter(user_id=user_id)

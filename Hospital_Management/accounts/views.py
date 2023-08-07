@@ -398,6 +398,15 @@ class HandleRole(APIView):
             if role_obj:
                 srlz_obj = RoleSerializer(role_obj, many=True)
                 data = srlz_obj.data
+                for d in data:
+                    prm_detal = []
+                    prms = d['permission']
+                    for perm in prms:
+                        obj = Permission.objects.filter(id=perm).values(
+                            "permission_key", "name", 'id')
+                        prm_detal.append(obj)
+                    d['permission_detail'] = prm_detal
+
                 return Response(formatResponse('Roles found successfully', 'success', data,
                                                status.HTTP_200_OK))
 
@@ -408,15 +417,14 @@ class HandleRole(APIView):
 
     def put(self, request):
         try:
+            role_id = request.GET.get('role_id', None)
             data_set = dict(request.data)
-            role_name = data_set['role']
 
-            if not role_name:
-                return Response(formatResponse('Please Provide Role Name Wich you want to Update .', 'error', None,
+            if not role_id:
+                return Response(formatResponse('Please Provide Role ID.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
-            data_set = dict(request.data)
-            role_obj = Role.objects.filter(role=role_name)
+            role_obj = Role.objects.filter(id=role_id)
 
             if not role_obj:
                 return Response(formatResponse('Provided Role Name id not Valid.', 'error', None,
@@ -435,15 +443,14 @@ class HandleRole(APIView):
 
     def delete(self, request):
         try:
-            data = dict(request.data)
-            name = data['role']
+            role_id = request.GET.get('role_id', None)
 
-            if not name:
-                return Response(formatResponse('Please Provide Role Name ', 'error', None,
+            if not role_id:
+                return Response(formatResponse('Please Provide Role Id.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
             try:
-                role_obj = Role.objects.get(name=name)
+                role_obj = Role.objects.get(id=role_id)
             except:
                 role_obj = None
 
@@ -647,15 +654,14 @@ class handlePermissions(APIView):
 
     def delete(self, request):
         try:
-            data = dict(request.data)
-            per_to_delete = data['permission_key']
+            permission_id = request.GET.get('permission_id', None)
 
-            if not per_to_delete:
+            if not permission_id:
                 return Response(formatResponse('Please Provide Permission ', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
             try:
-                per_obj = Permission.objects.get(permission_key=per_to_delete)
+                per_obj = Permission.objects.get(id=permission_id)
             except:
                 per_obj = None
 
@@ -666,6 +672,34 @@ class handlePermissions(APIView):
             else:
                 return Response(formatResponse('No Permission Found to Delete. ', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
+
+        except:
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def put(self, request):
+        try:
+            permission_id = request.GET.get('permission_id', None)
+            data_set = dict(request.data)
+
+            if not permission_id:
+                return Response(formatResponse('Please Provide Role ID.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            try:
+                per_obj = Permission.objects.get(id=permission_id)
+            except:
+                per_obj = None
+
+            if not per_obj:
+                return Response(formatResponse('Given Role Id id not valid.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+            srlz_obj = PermissionSerializer()
+            srlz_data = srlz_obj.update(srlz_obj, data_set)
+            updated_data = PermissionSerializer(srlz_data).data
+
+            return Response(formatResponse('Permission Updated successfully', 'success',  updated_data,
+                                           status.HTTP_200_OK))
 
         except:
             return Response(formatResponse('Internal Server Error', 'error', None,
