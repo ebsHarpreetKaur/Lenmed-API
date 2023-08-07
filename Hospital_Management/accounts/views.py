@@ -683,7 +683,7 @@ class handlePermissions(APIView):
             data_set = dict(request.data)
 
             if not permission_id:
-                return Response(formatResponse('Please Provide Role ID.', 'error', None,
+                return Response(formatResponse('Please Provide Permission ID.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
             try:
@@ -692,15 +692,16 @@ class handlePermissions(APIView):
                 per_obj = None
 
             if not per_obj:
-                return Response(formatResponse('Given Role Id id not valid.', 'error', None,
+                return Response(formatResponse('Given Permission Id id not valid.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
             srlz_obj = PermissionSerializer()
-            srlz_data = srlz_obj.update(srlz_obj, data_set)
+            srlz_data = srlz_obj.update(per_obj, data_set)
             updated_data = PermissionSerializer(srlz_data).data
 
             return Response(formatResponse('Permission Updated successfully', 'success',  updated_data,
                                            status.HTTP_200_OK))
 
         except:
+            print("-->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
