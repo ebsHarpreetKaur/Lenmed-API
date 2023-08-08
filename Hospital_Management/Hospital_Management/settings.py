@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'baseapp',
     'hospital',
     'doctors',
+    'nurses'
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

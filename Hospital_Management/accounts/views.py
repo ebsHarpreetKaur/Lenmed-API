@@ -21,6 +21,7 @@ from sys import exc_info
 from Hospital_Management.settings import EMAIL_HOST_USER, OTP_EXPIRE_TIME
 from django.core.mail import send_mail, EmailMultiAlternatives
 from datetime import datetime, timedelta
+from logs.LogHandler import LogHelper
 
 
 def GetCurrentUserData(id, current_role):
@@ -221,6 +222,7 @@ class ChangePassword(APIView):
     :param request:
     :return:
     '''
+    objLog = LogHelper('accounts', 'ChangePassword')
 
     def post(self, request):
         try:
@@ -259,6 +261,7 @@ class ChangePassword(APIView):
 
         except:
             print("--->>", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -270,6 +273,8 @@ class RegisterUsers(APIView):
     :return:
     '''
     permission_classes = (IsAuthenticated,)
+
+    objLog = LogHelper('accounts', 'RegisterUsers')
 
     def post(self, request):
         try:
@@ -318,7 +323,7 @@ class RegisterUsers(APIView):
                 return Response(formatResponse('Something went wrong', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
-
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -330,11 +335,11 @@ class DeleteUser(APIView):
     :return:
     '''
     permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('accounts', 'DeleteUser')
 
     def post(self, request):
         try:
-            data = dict(request.data)
-            delete_ac_id = data['id']
+            delete_ac_id = request.GET.get('user_id', None)
             try:
                 ac_obj = HospitalUser.objects.get(id=delete_ac_id)
             except:
@@ -348,6 +353,7 @@ class DeleteUser(APIView):
                 return Response(formatResponse("This user does not exist. Please check again.", 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -359,6 +365,7 @@ class HandleRole(APIView):
     :return:
     '''
     permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('accounts', 'HandleRole')
 
     def post(self, request):
         try:
@@ -385,7 +392,7 @@ class HandleRole(APIView):
                 return Response(formatResponse("Something went wrong. Please try again.", 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
         except:
-
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -412,6 +419,7 @@ class HandleRole(APIView):
 
         except:
             print("--error--finding--Roles--", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -438,6 +446,8 @@ class HandleRole(APIView):
                                            status.HTTP_200_OK))
 
         except:
+            print("-->>", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -463,12 +473,14 @@ class HandleRole(APIView):
                                                status.HTTP_400_BAD_REQUEST))
 
         except:
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
 
 class HandleHospitalAndAdmin(APIView):
     permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('accounts', 'HandleHospitalAndAdmin')
     '''
     Method to handle Hospital and Admin
     :param request:
@@ -587,6 +599,7 @@ class HandleHospitalAndAdmin(APIView):
         except:
 
             print("---3--->", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -602,6 +615,7 @@ class HandleHospitalAndAdmin(APIView):
 
         except:
             print("--->", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -610,6 +624,7 @@ class HandleHospitalAndAdmin(APIView):
 
 class handlePermissions(APIView):
     permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('accounts', 'handlePermissions')
 
     def post(self, request):
         try:
@@ -632,6 +647,7 @@ class handlePermissions(APIView):
 
         except:
             print("--error--adding--permissions--", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -649,6 +665,7 @@ class handlePermissions(APIView):
 
         except:
             print("--error--finding--permissions--", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -674,6 +691,7 @@ class handlePermissions(APIView):
                                                status.HTTP_400_BAD_REQUEST))
 
         except:
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -703,5 +721,37 @@ class handlePermissions(APIView):
 
         except:
             print("-->", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+
+class UpdateUser(APIView):
+    permission_classes = (IsAuthenticated,)
+    objLog = LogHelper('accounts', 'UpdateUser')
+
+    def put(self, request):
+        try:
+            user_data = dict(request.data)
+            user_id = request.GET.get('user_id', None)
+
+            if not user_id:
+                return Response(formatResponse('Please Provide User ID, Which you want to update', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            user_obj = HospitalUser.objects.filter(id=user_id)
+
+            if not user_obj:
+                return Response(formatResponse('Provided User ID, does not exist.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+            srlz_obj = HospitalUserSerializer()
+            srlz_data = srlz_obj.update(user_obj[0], user_data)
+            updated_data = HospitalUserSerializer(srlz_data).data
+
+            return Response(formatResponse('User Updated successfully', 'success',  updated_data,
+                                           status.HTTP_200_OK))
+        except:
+            print("-->>", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
