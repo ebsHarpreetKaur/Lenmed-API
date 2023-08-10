@@ -39,9 +39,9 @@ class HandleHospitalData(APIView):
     permission_classes = (IsAuthenticated,)
     objLog = LogHelper('hospital', 'HandleHospitalData')
 
-    def getHospitalObject(sef, id, hos_id):
+    def getHospitalObject(sef, hos_id):
         try:
-            hsptl_obj = Hospital.objects.filter(admin_id=id, id=hos_id)
+            hsptl_obj = Hospital.objects.filter(id=hos_id)
             if hsptl_obj:
                 return hsptl_obj
             else:
@@ -67,7 +67,7 @@ class HandleHospitalData(APIView):
             hospital_id = request.GET.get('hospital_id', None)
 
             if hospital_id:
-                hsptl_obj = self.getHospitalObject(user_id, hospital_id)
+                hsptl_obj = self.getHospitalObject(hospital_id)
 
             elif user_role == 'Superadmin':
                 hsptl_obj = Hospital.objects.filter()
@@ -92,16 +92,12 @@ class HandleHospitalData(APIView):
 
     def put(self, request):
         try:
-            user_id = request.user.id
             hospital_id = request.GET.get['hospital_id', None]
             data_dict = request.data
-            # if_alredy_exist = Hospital.objects.filter(id=hospital_id, name=data_dict['name'])
 
-            # if if_alredy_exist:
-            #     return Response(formatResponse('Same Hospital is registered to another user, Please Change the Hospital Name', 'error', None,
-            #                                    status.HTTP_400_BAD_REQUEST))
+            if hospital_id:
+                hsptl_obj = self.getHospitalObject(hospital_id)
 
-            hsptl_obj = self.getHospitalObject(user_id, hospital_id)
             if hsptl_obj:
                 srlz_obj = HospitalSerializer()
                 srlz_data = srlz_obj.update(hsptl_obj[0], data_dict)
@@ -113,6 +109,9 @@ class HandleHospitalData(APIView):
                 else:
                     return Response(formatResponse('Something went wrong', 'error', None,
                                                    status.HTTP_400_BAD_REQUEST))
+            else:
+                return Response(formatResponse('No hospital found.', 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
 
         except:
             self.objLog.doLog(exc_info(), 'error')
@@ -143,5 +142,32 @@ class HandleHospitalData(APIView):
         except:
             self.objLog.doLog(exc_info(), 'error')
             print("-error in removing Hospital Data->", exc_info())
+            return Response(formatResponse('Internal Server Error', 'error', None,
+                                           status.HTTP_500_INTERNAL_SERVER_ERROR))
+
+    def post(self, request):
+        try:
+            data = request.data
+            hospital_exist = Hospital.objects.filter(name=data['name'])
+
+            if hospital_exist:
+                return Response(formatResponse("Hospital with same name alredy exist.", 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+            valid_user = HospitalUser.objects.filter(id=data['admin_id'], email=data['admin_email'])
+
+            if not valid_user:
+                return Response(formatResponse("No user found with given id , Kindly verify and attempt again.", 'error', None,
+                                               status.HTTP_400_BAD_REQUEST))
+
+            srlz_obj = HospitalSerializer()
+            save_data = srlz_obj.create(data)
+            hospital_id = save_data.id
+
+            return Response(formatResponse('Hospital Added successfully', 'success',  {"hospital_id": hospital_id},
+                                           status.HTTP_200_OK))
+
+        except:
+            print("-->", exc_info())
+            self.objLog.doLog(exc_info(), 'error')
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))

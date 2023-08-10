@@ -290,29 +290,19 @@ class RegisterUsers(APIView):
                 return Response(formatResponse('Email is required', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
-            if 'password' not in dataset.keys():
-                return Response(formatResponse('Password is required', 'error', None,
+            valid_role = Role.objects.filter(id=dataset['role_id'])
+
+            if not valid_role:
+                return Response(formatResponse('Given role does not exist.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
-            if 'hospital_name' not in dataset.keys():
-                return Response(formatResponse('Hospital name is required', 'error', None,
-                                               status.HTTP_400_BAD_REQUEST))
-
-            if dataset['role_id'] == 2:
-                if user_role != 'Superadmin':
-                    return Response(formatResponse("Sorry you don't have permission", 'error', None,
-                                                   status.HTTP_400_BAD_REQUEST))
-
-            if dataset['role_id'] == 1:
-                if user_role == 'Worker' or user_role == 'Admin':
-                    return Response(formatResponse("Sorry you don't have permission", 'error', None,
-                                                   status.HTTP_400_BAD_REQUEST))
-            if user_role == 'Worker':
-                return Response(formatResponse("Sorry you don't have permission", 'error', None,
+            email_exist = HospitalUser.objects.filter(email=dataset['email'])
+            if email_exist:
+                return Response(formatResponse('Given email already exist, please try with different email.', 'error', None,
                                                status.HTTP_400_BAD_REQUEST))
 
             obj = HospitalUserSerializer()
-            dataset['password'] = make_password(dataset['password'])
+            dataset['password'] = make_password('password')
             save_data = obj.create(dataset)
             user_id = save_data.id
 
@@ -324,6 +314,7 @@ class RegisterUsers(APIView):
                                                status.HTTP_400_BAD_REQUEST))
         except:
             self.objLog.doLog(exc_info(), 'error')
+            print("-->", exc_info())
             return Response(formatResponse('Internal Server Error', 'error', None,
                                            status.HTTP_500_INTERNAL_SERVER_ERROR))
 
@@ -503,7 +494,7 @@ class HandleHospitalAndAdmin(APIView):
                                                status.HTTP_200_OK))
             else:
                 obj = HospitalUserSerializer()
-                dataset['password'] = make_password(dataset['password'])
+                dataset['password'] = make_password('password')
                 save_data = obj.create(dataset)
                 user_id = save_data.id
                 user_name = save_data.name
